@@ -1,0 +1,25 @@
+{
+  "name": "enron-search",
+  "version": "1.0.0",
+  "description": "a mail search & indexing system",
+  "main": "entry.js",
+  "scripts": {
+    "start-db": "start mongod --dbpath db",
+    "start-electron": "electron .",
+    "start": "npm run start-db & npm run start-electron"
+  },
+  "keywords": [
+    "lol",
+    "kappa",
+    "same"
+  ],
+  "author": "goatic & loosenoose",
+  "license": "MIT",
+  "devDependencies": {
+    "electron-prebuilt": "^0.36.9"
+  },
+  "dependencies": {
+    "jquery": "^2.2.1",
+    "mongodb": "^2.1.7"
+  }
+}
