@@ -5,15 +5,15 @@
 	<body>
 		<h1>Hello Electron!</h1>
 		<form id='insert-dir'>
-			<input name="dir" type="text" placeholder='Insert directory path...'/>
+			<input name="dir" type="text" placeholder='Insert directory path'/>
 			<input type="submit" value="Save"/>
 		</form>
 		<ul id="dirs">
-			<li>[ ] maildirs/allan/sent/1</li>
-			<li>[x] maildirs/tina/sent/12</li>
+			<!--	...		-->
 		</ul>
 		<button id="start">Start Indexing</button>
 		<button id="clear">Clear Directories</button>
+		<button id='refresh'>Refresh</button>
 		<script>
 			require('./app.js')
 		</script>
