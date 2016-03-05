@@ -84,19 +84,18 @@ const 	initDBConnection = callback => {
 				callback(error, stats && stats.isDirectory())
 			})
 		},
-		setDirectoryIndexed = _id => {
+		setDirectoryIndexed = (_id, callback) => {
 			DB_INSTANCE
 				.collection('dirs')
-				.updateOne({_id}, {$set:{indexed:true}})
+				.updateOne({_id}, {$set:{indexed:true}}, (error, rows) => callback(error, rows))
 		},
 		getFileWords = (path, callback) => {
 
 			fs.readFile(path, FILE_ENCODING, (error, data) => callback(error, data.match(WORD_REGEX)))
 		},
 		addWords = (words, path, id, callback) => {
-			const termHash = {}
-
-			terms = words
+			const 	termHash = {},
+					terms = words
 						.filter(word => termHash.hasOwnProperty(word) ? false : (termHash[word] = true))
 						.map(word => ({directory:id, file:path, word}))
 

@@ -65,11 +65,14 @@ export default class Indexer extends React.Component {
 						getFileWords(file, (error, words) => {
 							if(error)
 								return console.log(error)
-							addWords(words, file, dir._id, () => {
-								setDirectoryIndexed(dir._id)
-							})
+							addWords(words, file, dir._id, () => {/*...*/})
 						})
 					})
+				})
+				setDirectoryIndexed(dir._id, error => {
+					if(error)
+						return console.log(error)
+					this.onRefresh()
 				})
 			})
 		})
