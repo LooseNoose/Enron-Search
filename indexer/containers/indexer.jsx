@@ -4,15 +4,15 @@ import Insert 	from '../components/insert.jsx'
 import Controls from '../components/controls.jsx'
 
 import {
-	addWords,
-	isDirectory,
-	getFileWords,
+	connectDatabase,
 	addDirectory,
 	getDirectories,
-	initDBConnection, 
-	clearDirectories, 
-	getDirectoryFiles, 
-	setDirectoryIndexed
+	clearDirectories,
+	getDirectoryFiles,
+	isDirectory,
+	setDirectoryIndexed,
+	getFileWords,
+	wordsToTerms
 } from '../scripts/functions'
 
 export default class Indexer extends React.Component {
@@ -30,70 +30,56 @@ export default class Indexer extends React.Component {
 			error: undefined
 		}
 
-		initDBConnection(() => {
-			this.onRefresh()
-		})
+		connectDatabase().then(this.onRefresh)
 	}
 
-	onInsert(e) {
+	async onInsert(e) {
 		e.preventDefault()
 
-		const { dir } = e.target
-		
-		isDirectory(dir.value, (error, isDir) => {
-			this.setState({error})
+		const 	{ dir } = e.target,
+				isDir = await isDirectory(dir.value)
 
-			if(isDir)
-				addDirectory(dir.value, (error, rows) => {
-					this.setState({error})
-					dir.value = ''
+		if(isDir) {
+			await addDirectory(dir.value)
 
-					if(rows)
-						this.onRefresh()
-				})
-		})
+			dir.value = ''
+		}
+
+		this.onRefresh()
 	}
 
-	onStart() {
-		getDirectories((error, dirs = []) => {
-			this.setState({error})
-			dirs.forEach(dir => {
-				if(dir.indexed)
-					return
-				getDirectoryFiles(dir.path, (files = []) => {
-					files.forEach(file => {
-						getFileWords(file, (error, words) => {
-							if(error)
-								return console.log(error)
-							addWords(words, file, dir._id, () => {/*...*/})
-						})
-					})
-				})
-				setDirectoryIndexed(dir._id, error => {
-					if(error)
-						return console.log(error)
-					this.onRefresh()
-				})
-			})
-		})
+	async onStart() {
+		const dirs = await getDirectories()
+	
+		for(let dir of dirs) {
+			if(dir.indexed)
+				return
+
+			const files = await getDirectoryFiles(dir.path)
+
+			for(let file of files) {
+				const 	words = await getFileWords(file),
+						terms = wordsToTerms(words, file, dir._id)
+				
+				console.log(terms)
+				//do something with terms... :)
+			}
+			await setDirectoryIndexed(dir._id)
+		}
+
+		this.onRefresh()
 	}
 
-	onClear() {
-		clearDirectories((error, rows) => {
-			this.setState({error})
+	async onClear() {
+		await clearDirectories()
 
-			if(rows)
-				this.onRefresh()
-		})
+		this.onRefresh()
 	}
 
-	onRefresh() {
-		getDirectories((error, dirs) => {
-			this.setState({
-				dirs: error ? this.state.dirs : dirs,
-				error
-			})
-		})
+	async onRefresh() {
+		const dirs = await getDirectories()
+
+		this.setState({dirs})
 	}
 
 	clearError() {
@@ -105,7 +91,7 @@ export default class Indexer extends React.Component {
 	    	<h1>Enron Email Indexer</h1>
 	    	<Insert onInsert={this.onInsert}/>
 	    	<Controls 
-	    		onStart={this.onStart} 
+	    		onStart={this.onStart}
 	    		onClear={this.onClear} 
 	    		onRefresh={this.onRefresh}
 	    	/>
