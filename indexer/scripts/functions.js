@@ -56,7 +56,6 @@ export const getDirectoryFiles = async function(path) {
 
 export const isDirectory = async function(path) {
 	const fileStats = await readStats(path)
-
 	return fileStats.isDirectory()
 }
 
@@ -68,13 +67,12 @@ export const setDirectoryIndexed = async function(_id) {
 
 export const getFileWords = async function(path) {
 	const content = await readFile(path, FILE_ENCODING)
-
 	return content.match(WORD_REGEX)
 }
 
 export const wordsToTerms = function(words, path, id) {
-	const 	termHash = {}
-	return words
-		.filter(word => termHash.hasOwnProperty(word) ? false : (termHash[word] = true))
-		.map(word => ({directory:id, file:path, term:word}))
+	const 	termHash 	= {},
+			terms 		= words
+							.filter(word => termHash.hasOwnProperty(word) ? false : (termHash[word] = true))
+							.map(word => ({directory:id, file:path, term:word}))
 }

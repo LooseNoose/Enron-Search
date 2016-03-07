@@ -1,7 +1,8 @@
-import React 	from 'react'
-import List 	from '../components/list.jsx'
-import Insert 	from '../components/insert.jsx'
-import Controls from '../components/controls.jsx'
+import React 		from 'react'
+import List 		from '../components/list.jsx'
+import Insert 		from '../components/insert.jsx'
+import Controls 	from '../components/controls.jsx'
+import ErrorMessage from '../components/errorMessage.jsx'
 
 import {
 	connectDatabase,
@@ -18,68 +19,79 @@ import {
 export default class Indexer extends React.Component {
 	constructor() {
 		super()
-
 		this.onInsert 	= this.onInsert.bind(this)
 		this.onStart 	= this.onStart.bind(this)
 		this.onClear 	= this.onClear.bind(this)
 		this.onRefresh 	= this.onRefresh.bind(this)
 		this.clearError = this.clearError.bind(this)
-
 		this.state = {
 			dirs: [],
-			error: undefined
+			error: undefined,
+			isIndexing:false
 		}
-
 		connectDatabase().then(this.onRefresh)
 	}
 
 	async onInsert(e) {
-		e.preventDefault()
-
-		const 	{ dir } = e.target,
-				isDir = await isDirectory(dir.value)
-
-		if(isDir) {
-			await addDirectory(dir.value)
-
-			dir.value = ''
+		try {
+			e.preventDefault()
+			const 	{ dir } = e.target,
+					isDir = await isDirectory(dir.value)
+			if(isDir) {
+				await addDirectory(dir.value)
+				dir.value = ''
+			}
+			this.onRefresh()
 		}
-
-		this.onRefresh()
+		catch(error) {
+			this.setState({error})
+		}
 	}
 
 	async onStart() {
-		const dirs = await getDirectories()
-	
-		for(let dir of dirs) {
-			if(dir.indexed)
-				return
-
-			const files = await getDirectoryFiles(dir.path)
-
-			for(let file of files) {
-				const 	words = await getFileWords(file),
-						terms = wordsToTerms(words, file, dir._id)
-				
-				console.log(terms)
-				//do something with terms... :)
+		try {
+			this.setState({isIndexing:true})
+			const dirs = await getDirectories()
+			for(let dir of dirs) {
+				if(dir.indexed)
+					continue
+				const files = await getDirectoryFiles(dir.path)
+				for(let file of files) {
+					const 	words = await getFileWords(file),
+							terms = wordsToTerms(words, file, dir._id)
+					// do something with terms...
+				}
+				await setDirectoryIndexed(dir._id)
 			}
-			await setDirectoryIndexed(dir._id)
+			this.onRefresh()
 		}
-
-		this.onRefresh()
+		catch(error) {
+			this.setState({error})
+		}
+		finally {
+			this.setState({isIndexing:false})
+		}
 	}
 
 	async onClear() {
-		await clearDirectories()
-
-		this.onRefresh()
+		try {
+			await clearDirectories()
+			this.onRefresh()
+		}
+		catch(error) {
+			this.setState({error})
+		}
 	}
 
 	async onRefresh() {
-		const dirs = await getDirectories()
-
-		this.setState({dirs})
+		try {
+			const dirs = await getDirectories()
+			this.setState({dirs})
+		}
+		catch(error) {
+			this.setState({error})
+		}
+		
 	}
 
 	clearError() {
@@ -89,16 +101,23 @@ export default class Indexer extends React.Component {
   	render() {
     	return <div>
 	    	<h1>Enron Email Indexer</h1>
-	    	<Insert onInsert={this.onInsert}/>
+	    	<Insert 
+	    		onInsert={this.onInsert} 
+	    		isIndexing={this.state.isIndexing}
+	    	/>
 	    	<Controls 
 	    		onStart={this.onStart}
-	    		onClear={this.onClear} 
+	    		onClear={this.onClear}
 	    		onRefresh={this.onRefresh}
+	    		isIndexing={this.state.isIndexing}
 	    	/>
-	    	<List dirs={this.state.dirs}/>
-	    	<p onClick={this.clearError}>
-	    		{this.state.error ? this.state.error.message : ''}
-	    	</p>
+	    	<List 
+	    		dirs={this.state.dirs}
+	    	/>
+	    	<ErrorMessage
+	    		error={this.state.error}
+	    		onClear={this.clearError}
+	    	/>
     	</div>
   	}
 }
